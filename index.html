@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corruption Perceptions Index — Interactive World Map</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Corruption Perceptions Index</h1>
+    <p class="subtitle">
+      Interactive world map of country corruption scores.
+      Higher score = cleaner; lower score = more corrupt. Source: Transparency International CPI 2024.
+    </p>
+  </header>
+
+  <main class="app-main">
+    <section class="kpi-strip" aria-label="Global indicators">
+      <div class="kpi">
+        <div class="kpi-label">Countries assessed</div>
+        <div class="kpi-value" id="kpi-countries">—</div>
+        <div class="kpi-sub">CPI 2024 dataset</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Mean CPI score</div>
+        <div class="kpi-value" id="kpi-mean-cpi">—</div>
+        <div class="kpi-sub">0 = corrupt • 100 = clean</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">FATF black / grey</div>
+        <div class="kpi-value" id="kpi-fatf">—</div>
+        <div class="kpi-sub">Call for action / increased monitoring</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Events (24h)</div>
+        <div class="kpi-value" id="kpi-events">—</div>
+        <div class="kpi-sub">From financial crime feed</div>
+      </div>
+      <div class="kpi kpi-wide">
+        <div class="kpi-label">Cleanest jurisdiction</div>
+        <div class="kpi-value kpi-tiny" id="kpi-cleanest">—</div>
+      </div>
+      <div class="kpi kpi-wide">
+        <div class="kpi-label">Most corrupt jurisdiction</div>
+        <div class="kpi-value kpi-tiny" id="kpi-worst">—</div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <label for="search">Search country</label>
+      <input id="search" type="text" placeholder="e.g. Germany" autocomplete="off" />
+      <span id="result-count" class="result-count"></span>
+    </section>
+
+    <section class="map-wrapper">
+      <svg id="map" role="img" aria-label="World choropleth of corruption scores"></svg>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <div id="legend" class="legend" aria-hidden="true"></div>
+    </section>
+
+    <section id="details" class="details" aria-live="polite">
+      <p class="hint">Hover or click any country to see details.</p>
+    </section>
+
+    <section class="crime-panel" aria-label="Financial crime live feed">
+      <header class="crime-header">
+        <div class="crime-title">
+          <span class="live-dot" id="crime-live-dot"></span>
+          <span id="crime-live-label">Live</span>
+          <h2>Financial crime activity</h2>
+          <span id="crime-count" class="result-count"></span>
+        </div>
+        <div class="crime-actions">
+          <span id="crime-scope" class="scope">Scope: global</span>
+          <button id="crime-scope-clear" type="button" class="btn-link" hidden>Clear scope</button>
+          <button id="crime-pause" type="button" class="btn">Pause</button>
+        </div>
+      </header>
+      <div id="crime-filters" class="crime-filters" role="group" aria-label="Filter by event type"></div>
+      <ol id="crime-feed" class="crime-feed" aria-live="polite"></ol>
+      <p class="crime-disclaimer">
+        Demo feed — events are illustrative samples drawn from public reporting.
+        Production deployments should ingest from OFAC, OFSI, EU Council, FATF,
+        FinCEN/SEC/DOJ, Europol, and national FIU sources.
+      </p>
+    </section>
+
+    <section class="methodology" aria-label="Methodology">
+      <details>
+        <summary><h2>Methodology</h2></summary>
+
+        <h3>Corruption Perceptions Index (CPI)</h3>
+        <p>
+          The map displays the <strong>Transparency International CPI 2024</strong>
+          score for each country. CPI aggregates 13 independent expert and
+          business surveys (e.g. World Bank CPIA, World Justice Project Rule of
+          Law Index, Bertelsmann Foundation, IMD World Competitiveness Yearbook,
+          PRS International Country Risk Guide) to estimate perceived public
+          sector corruption on a normalized 0–100 scale. A country is included
+          only if at least three eligible source data points are available.
+        </p>
+        <ul>
+          <li><strong>0</strong> = highly corrupt; <strong>100</strong> = very clean.</li>
+          <li>Scores are <em>perception-based</em> — they measure expert/business assessment of corruption, not directly observed corrupt acts.</li>
+          <li>Year-over-year changes within ±2 points are not statistically significant per TI's own guidance.</li>
+        </ul>
+
+        <h3>Choropleth construction</h3>
+        <ul>
+          <li><strong>Geometry:</strong> Natural Earth simplified polygons, served as <code>countries-110m.json</code> from the <code>world-atlas</code> package via jsDelivr.</li>
+          <li><strong>Projection:</strong> Natural Earth I (<code>d3.geoNaturalEarth1</code>), tuned to viewport.</li>
+          <li><strong>Join key:</strong> ISO 3166-1 numeric (TopoJSON <code>feature.id</code>) → ISO 3166-1 alpha-3 → CPI score.</li>
+          <li><strong>Color scale:</strong> piecewise-linear from deep red (0) → orange (25) → yellow (50) → light green (75) → deep green (100). Clamped at the endpoints.</li>
+          <li><strong>No-data:</strong> territories without CPI 2024 coverage (e.g. small dependencies, disputed regions) render as neutral grey.</li>
+        </ul>
+
+        <h3>Derived statistics</h3>
+        <ul>
+          <li><strong>Rank</strong> is computed at load time from the loaded CPI dictionary using dense ranking (ties share a rank).</li>
+          <li><strong>Percentile</strong> = round(((N − rank + 1) / N) × 100), where N is the number of countries with CPI 2024 data in this build.</li>
+          <li><strong>Tier</strong> bins: ≥80 Very clean • 65–79 Clean • 50–64 Mixed • 30–49 Corrupt • &lt;30 Highly corrupt.</li>
+        </ul>
+
+        <h3>Financial crime feed</h3>
+        <ul>
+          <li>The live panel renders an <strong>illustrative</strong> stream of enforcement actions, sanctions, AML penalties, indictments, asset seizures, and active investigations.</li>
+          <li>Seed events have synthetic timestamps offset from page load so the feed appears recent on every visit; the stream emits a new event every 5–13 seconds from a curated pool.</li>
+          <li>Selecting a country on the map scopes the feed to that jurisdiction; chip filters narrow by event type.</li>
+          <li>For production use, the seed should be replaced with live ingest. Suggested feeds:
+            <em>OFAC SDN delta</em>, <em>UK OFSI consolidated list</em>, <em>EU sanctions map</em>, <em>FATF black/grey lists</em>,
+            <em>FinCEN advisories</em>, <em>SEC / DOJ press releases</em>, <em>Europol press</em>, <em>ICIJ leaks</em>, and national FIU bulletins.
+          </li>
+        </ul>
+
+        <h3>Limitations</h3>
+        <ul>
+          <li>CPI measures <em>perception</em>, not incidence. It does not capture private-sector corruption, money laundering volumes, or illicit financial flows directly.</li>
+          <li>Geometry is simplified at 1:110m; small island states may be invisible at default zoom.</li>
+          <li>Score values shipped in <code>data.js</code> are static; refresh annually when TI publishes the next CPI release.</li>
+          <li>The crime feed is a demonstration scaffold — do not treat events as breaking news.</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>
+      Geometry: world-atlas (Natural Earth). Scores: Transparency International CPI 2024.
+      Built with D3 v7.
+    </small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="data.js"></script>
+  <script src="risk-data.js"></script>
+  <script src="crime-data.js"></script>
+  <script src="app.js"></script>
+  <script src="crime.js"></script>
+  <script src="kpi.js"></script>
+</body>
+</html>
