@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Corruption Perceptions Index — Interactive World Map</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Corruption Perceptions Index</h1>
+    <p class="subtitle">
+      Interactive world map of country corruption scores.
+      Higher score = cleaner; lower score = more corrupt. Source: Transparency International CPI 2024.
+    </p>
+  </header>
+
+  <main class="app-main">
+    <section class="controls">
+      <label for="search">Search country</label>
+      <input id="search" type="text" placeholder="e.g. Germany" autocomplete="off" />
+      <span id="result-count" class="result-count"></span>
+    </section>
+
+    <section class="map-wrapper">
+      <svg id="map" role="img" aria-label="World choropleth of corruption scores"></svg>
+      <div id="tooltip" class="tooltip" hidden></div>
+      <div id="legend" class="legend" aria-hidden="true"></div>
+    </section>
+
+    <section id="details" class="details" aria-live="polite">
+      <p class="hint">Hover or click any country to see details.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>
+      Geometry: world-atlas (Natural Earth). Scores: Transparency International CPI 2024.
+      Built with D3 v7.
+    </small>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
