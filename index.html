@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SENTINEL // Financial Intelligence Monitor</title>
+<link rel="stylesheet" href="css/main.css" />
+<link rel="stylesheet" href="css/layout.css" />
+<link rel="stylesheet" href="css/components.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Top command bar -->
+    <header class="topbar">
+      <div class="topbar__brand">
+        <div class="brand-mark"></div>
+        <div class="brand-text">
+          <span class="brand-text__name">SENTINEL</span>
+          <span class="brand-text__sub">FININT // OPS-7</span>
+        </div>
+      </div>
+
+      <nav class="topbar__nav">
+        <button class="navbtn navbtn--active">WORLD</button>
+        <button class="navbtn">ENTITIES</button>
+        <button class="navbtn">TRANSACTIONS</button>
+        <button class="navbtn">ALERTS</button>
+        <button class="navbtn">CASES</button>
+        <button class="navbtn">REPORTS</button>
+      </nav>
+
+      <div class="topbar__cmd">
+        <span class="topbar__cmd-prefix">&gt;</span>
+        <input type="text" class="topbar__cmd-input" placeholder="search entities, accounts, transactions, sanctions..." />
+        <kbd class="topbar__cmd-kbd">⌘K</kbd>
+      </div>
+
+      <div class="topbar__meta">
+        <div class="status-dot status-dot--live"></div>
+        <span class="topbar__meta-label">LIVE</span>
+        <span class="topbar__meta-clock" id="clock">--:--:-- UTC</span>
+        <div class="topbar__user">
+          <div class="avatar">KV</div>
+          <div class="topbar__user-meta">
+            <span class="topbar__user-name">K. VANCE</span>
+            <span class="topbar__user-role">ANALYST · L4</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Left sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar__section">
+        <div class="sidebar__title">WATCHLISTS</div>
+        <ul class="sidebar__list">
+          <li class="sidebar__item sidebar__item--active">
+            <span class="dot dot--red"></span> OFAC SDN <span class="badge">412</span>
+          </li>
+          <li class="sidebar__item">
+            <span class="dot dot--amber"></span> EU Consolidated <span class="badge">288</span>
+          </li>
+          <li class="sidebar__item">
+            <span class="dot dot--amber"></span> UN 1267 <span class="badge">154</span>
+          </li>
+          <li class="sidebar__item">
+            <span class="dot dot--blue"></span> Internal PEP <span class="badge">1.2k</span>
+          </li>
+          <li class="sidebar__item">
+            <span class="dot dot--cyan"></span> High-Risk Jurisdictions <span class="badge">23</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar__section">
+        <div class="sidebar__title">ACTIVE CASES</div>
+        <ul class="sidebar__list">
+          <li class="sidebar__item">
+            <div class="case-row">
+              <span class="case-row__id">CASE-2841</span>
+              <span class="sev sev--crit">CRITICAL</span>
+            </div>
+            <div class="case-row__name">Operation Glass Veil</div>
+          </li>
+          <li class="sidebar__item">
+            <div class="case-row">
+              <span class="case-row__id">CASE-2837</span>
+              <span class="sev sev--high">HIGH</span>
+            </div>
+            <div class="case-row__name">Shell Network — Cyprus</div>
+          </li>
+          <li class="sidebar__item">
+            <div class="case-row">
+              <span class="case-row__id">CASE-2825</span>
+              <span class="sev sev--med">MED</span>
+            </div>
+            <div class="case-row__name">Crypto Mixer Cluster Δ-7</div>
+          </li>
+          <li class="sidebar__item">
+            <div class="case-row">
+              <span class="case-row__id">CASE-2811</span>
+              <span class="sev sev--low">LOW</span>
+            </div>
+            <div class="case-row__name">Trade-Based ML Vector</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar__section">
+        <div class="sidebar__title">FILTERS</div>
+        <div class="filter-group">
+          <label class="filter-row"><input type="checkbox" checked /> Sanctions hits</label>
+          <label class="filter-row"><input type="checkbox" checked /> PEP exposure</label>
+          <label class="filter-row"><input type="checkbox" checked /> Structuring</label>
+          <label class="filter-row"><input type="checkbox" /> Round-trip flows</label>
+          <label class="filter-row"><input type="checkbox" /> Crypto on/off ramps</label>
+          <label class="filter-row"><input type="checkbox" /> Trade mispricing</label>
+        </div>
+      </div>
+
+      <div class="sidebar__footer">
+        <div class="sidebar__footer-row">
+          <span>SIGNAL</span>
+          <span class="mono">98.2%</span>
+        </div>
+        <div class="sidebar__footer-row">
+          <span>FEED LAG</span>
+          <span class="mono">412ms</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main canvas -->
+    <main class="canvas">
+      <section class="panel panel--map">
+        <header class="panel__head">
+          <div class="panel__title">
+            <span class="panel__dot"></span>
+            GLOBAL THREAT SURFACE
+          </div>
+          <div class="panel__tools">
+            <button class="chip chip--on">24H</button>
+            <button class="chip">7D</button>
+            <button class="chip">30D</button>
+            <button class="chip">YTD</button>
+            <span class="vsep"></span>
+            <button class="chip">SANCTIONS</button>
+            <button class="chip">FLOWS</button>
+            <button class="chip">PEP</button>
+          </div>
+        </header>
+        <div class="panel__body panel__body--map" id="map-panel">
+          <svg id="world-svg" preserveAspectRatio="xMidYMid meet"></svg>
+          <div id="map-tooltip" class="map-tooltip"></div>
+          <div class="map-legend">
+            <div class="map-legend__title">SEVERITY</div>
+            <div class="map-legend__row"><span class="hs-swatch hs-swatch--crit"></span> CRITICAL</div>
+            <div class="map-legend__row"><span class="hs-swatch hs-swatch--high"></span> HIGH</div>
+            <div class="map-legend__row"><span class="hs-swatch hs-swatch--med"></span> MEDIUM</div>
+            <div class="map-legend__row"><span class="hs-swatch hs-swatch--low"></span> LOW</div>
+          </div>
+          <div class="map-stats">
+            <div class="map-stat"><div class="map-stat__k">HOTSPOTS</div><div class="map-stat__v" id="stat-hotspots">—</div></div>
+            <div class="map-stat"><div class="map-stat__k">FLOWS · 24H</div><div class="map-stat__v" id="stat-flows">—</div></div>
+            <div class="map-stat"><div class="map-stat__k">CRIT JURISDICTIONS</div><div class="map-stat__v map-stat__v--alert" id="stat-crit">—</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel--graph">
+        <header class="panel__head">
+          <div class="panel__title">
+            <span class="panel__dot"></span>
+            ENTITY NETWORK · CASE-2841
+          </div>
+          <div class="panel__tools">
+            <button class="chip chip--on">FORCE</button>
+            <button class="chip">RADIAL</button>
+            <button class="chip">HIERARCH</button>
+          </div>
+        </header>
+        <div class="panel__body panel__body--placeholder">
+          <div class="placeholder">
+            <div class="placeholder__title">ENTITY GRAPH</div>
+            <div class="placeholder__sub">// renders in Part 3</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel--flow">
+        <header class="panel__head">
+          <div class="panel__title">
+            <span class="panel__dot"></span>
+            TRANSACTION FLOW
+          </div>
+          <div class="panel__tools">
+            <span class="kv"><span class="kv__k">VOL 24H</span><span class="kv__v">$184.3M</span></span>
+            <span class="kv"><span class="kv__k">FLAGGED</span><span class="kv__v kv__v--alert">$22.1M</span></span>
+          </div>
+        </header>
+        <div class="panel__body panel__body--placeholder">
+          <div class="placeholder">
+            <div class="placeholder__title">FLOW VIEW</div>
+            <div class="placeholder__sub">// renders in Part 3</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Right rail: alerts feed -->
+    <aside class="rail">
+      <div class="rail__head">
+        <div class="rail__title">
+          <span class="status-dot status-dot--live"></span>
+          INTEL FEED
+        </div>
+        <div class="rail__tools">
+          <button class="chip chip--xs chip--on">ALL</button>
+          <button class="chip chip--xs">CRIT</button>
+          <button class="chip chip--xs">HIGH</button>
+        </div>
+      </div>
+      <div class="rail__body" id="feed">
+        <article class="feed-item feed-item--crit">
+          <header class="feed-item__head">
+            <span class="feed-item__sev">CRIT</span>
+            <span class="feed-item__time">04:11:22Z</span>
+          </header>
+          <div class="feed-item__title">Sanctioned counterparty hit · OFAC SDN</div>
+          <div class="feed-item__body">Wire $4.2M USD → SHELL CORP "ARGENT MARITIME LTD" (Limassol). Originator matches SDN entry 49219.</div>
+          <footer class="feed-item__foot">
+            <span class="tag">CASE-2841</span>
+            <span class="tag tag--ghost">CY · LBN</span>
+          </footer>
+        </article>
+
+        <article class="feed-item feed-item--high">
+          <header class="feed-item__head">
+            <span class="feed-item__sev">HIGH</span>
+            <span class="feed-item__time">04:09:08Z</span>
+          </header>
+          <div class="feed-item__title">Structuring pattern detected</div>
+          <div class="feed-item__body">17 deposits of $9,400–$9,890 across 5 accounts in 38 minutes. Common beneficiary node N-77129.</div>
+          <footer class="feed-item__foot">
+            <span class="tag">USD</span>
+            <span class="tag tag--ghost">US · TX</span>
+          </footer>
+        </article>
+
+        <article class="feed-item feed-item--high">
+          <header class="feed-item__head">
+            <span class="feed-item__sev">HIGH</span>
+            <span class="feed-item__time">04:02:55Z</span>
+          </header>
+          <div class="feed-item__title">Crypto mixer egress · cluster Δ-7</div>
+          <div class="feed-item__body">Outflow 38.2 BTC consolidated to exchange deposit address tagged HIGH-RISK.</div>
+          <footer class="feed-item__foot">
+            <span class="tag">BTC</span>
+            <span class="tag tag--ghost">SG</span>
+          </footer>
+        </article>
+
+        <article class="feed-item feed-item--med">
+          <header class="feed-item__head">
+            <span class="feed-item__sev">MED</span>
+            <span class="feed-item__time">03:58:14Z</span>
+          </header>
+          <div class="feed-item__title">PEP-linked beneficiary</div>
+          <div class="feed-item__body">Trust beneficiary 3 hops from PEP "M. KOVAC" — Ministry of Energy, Tier-2 jurisdiction.</div>
+          <footer class="feed-item__foot">
+            <span class="tag">EUR</span>
+            <span class="tag tag--ghost">RS · CH</span>
+          </footer>
+        </article>
+
+        <article class="feed-item feed-item--low">
+          <header class="feed-item__head">
+            <span class="feed-item__sev">LOW</span>
+            <span class="feed-item__time">03:51:00Z</span>
+          </header>
+          <div class="feed-item__title">Unusual jurisdiction hop</div>
+          <div class="feed-item__body">Funds routed US → MT → AE → HK within 6h. Below threshold but flagged for review.</div>
+          <footer class="feed-item__foot">
+            <span class="tag">USD</span>
+            <span class="tag tag--ghost">4 hops</span>
+          </footer>
+        </article>
+      </div>
+    </aside>
+
+    <!-- Bottom status bar -->
+    <footer class="statusbar">
+      <div class="statusbar__group">
+        <span class="status-dot status-dot--live"></span>
+        <span class="mono">FEED · CONNECTED</span>
+        <span class="vsep"></span>
+        <span class="mono">SWIFT 14.2k/s</span>
+        <span class="vsep"></span>
+        <span class="mono">ACH 6.8k/s</span>
+        <span class="vsep"></span>
+        <span class="mono">CRYPTO 22.1k/s</span>
+      </div>
+      <div class="statusbar__group statusbar__group--right">
+        <span class="mono">ALERTS 24H · <strong>1,284</strong></span>
+        <span class="vsep"></span>
+        <span class="mono">OPEN CASES · <strong>47</strong></span>
+        <span class="vsep"></span>
+        <span class="mono">CLEARANCE: TS//SCI</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
