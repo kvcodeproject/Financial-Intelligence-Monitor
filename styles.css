@@ -183,6 +183,229 @@ html, body {
 .details .stat .label { font-size: 11px; color: var(--muted); }
 .details .stat .value { font-size: 18px; font-weight: 600; }
 
+/* ---------- Financial crime panel ---------- */
+
+.crime-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.crime-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.crime-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.crime-title h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5b5b;
+  box-shadow: 0 0 0 0 rgba(255, 91, 91, 0.6);
+  animation: live-pulse 1.6s ease-out infinite;
+  display: inline-block;
+}
+.live-dot.paused {
+  background: var(--muted);
+  animation: none;
+  box-shadow: none;
+}
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(255, 91, 91, 0.6); }
+  70%  { box-shadow: 0 0 0 10px rgba(255, 91, 91, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(255, 91, 91, 0); }
+}
+.crime-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.scope strong { color: var(--text); }
+.btn, .btn-link {
+  background: #0b0f14;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn:hover, .btn-link:hover { border-color: var(--accent); }
+.btn-link {
+  background: transparent;
+  color: var(--accent);
+  border-color: transparent;
+  padding: 4px 6px;
+}
+
+.crime-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.chip {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.chip.on {
+  color: var(--text);
+  background: #0b0f14;
+  border-color: var(--accent);
+}
+
+.crime-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #0b0f14;
+}
+.crime-feed .event {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.crime-feed .event:last-child { border-bottom: none; }
+.crime-feed .event.fresh {
+  animation: event-flash 1.6s ease-out;
+}
+@keyframes event-flash {
+  0%   { background: rgba(88, 166, 255, 0.18); }
+  100% { background: transparent; }
+}
+.event-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.event-head .badge {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.event-head .country {
+  color: var(--text);
+  font-weight: 600;
+}
+.event-head .time {
+  color: var(--muted);
+  margin-left: auto;
+}
+.event-title {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.35;
+}
+.event-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+.crime-feed .empty {
+  padding: 20px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+.crime-disclaimer {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ---------- Methodology ---------- */
+
+.methodology {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 16px;
+}
+.methodology details > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.methodology details > summary::-webkit-details-marker { display: none; }
+.methodology details > summary::before {
+  content: "▸";
+  color: var(--muted);
+  transition: transform 150ms ease;
+  display: inline-block;
+}
+.methodology details[open] > summary::before { transform: rotate(90deg); }
+.methodology summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.methodology h3 {
+  margin: 18px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.methodology p, .methodology li {
+  font-size: 13px;
+  color: var(--text);
+}
+.methodology ul {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+.methodology code {
+  background: #0b0f14;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+.methodology details > *:last-child { padding-bottom: 14px; }
+
 .app-footer {
   padding: 12px 32px 24px;
   color: var(--muted);

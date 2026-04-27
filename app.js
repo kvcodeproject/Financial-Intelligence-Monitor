@@ -142,12 +142,15 @@ function selectCountry(alpha3) {
     .selectAll("path.country")
     .classed("matched", (d) => alpha3Of(d) === alpha3);
   renderDetails(alpha3);
+  const name = (CPI_DATA[alpha3] && CPI_DATA[alpha3].name) || alpha3;
+  document.dispatchEvent(new CustomEvent("country:select", { detail: { alpha3, name } }));
 }
 
 function clearSelection() {
   selectedAlpha3 = null;
   countriesGroup.selectAll("path.country").classed("matched", false);
   detailsEl.innerHTML = `<p class="hint">Hover or click any country to see details.</p>`;
+  document.dispatchEvent(new CustomEvent("country:select", { detail: { alpha3: null, name: null } }));
 }
 
 function renderDetails(alpha3) {
