@@ -117,12 +117,19 @@ function showTooltip(event, feature) {
   const rank = a3 ? rankByAlpha3[a3] : null;
   const total = Object.keys(CPI_DATA).length;
 
+  const fatf = a3 ? FATF_STATUS[a3] : null;
+  const fatfHtml = fatf
+    ? `<div class="fatf" style="color:${fatf.color};">FATF: ${fatf.label}</div>`
+    : "";
+
   const html = cpi
     ? `<strong>${escapeHtml(name)}</strong>
        <div class="score" style="color:${colorScale(cpi.score)}">${cpi.score}<span style="font-size:11px;color:var(--muted);"> / 100</span></div>
-       <div class="rank">Rank ${rank} of ${total} • CPI ${CPI_YEAR}</div>`
+       <div class="rank">Rank ${rank} of ${total} • CPI ${CPI_YEAR}</div>
+       ${fatfHtml}`
     : `<strong>${escapeHtml(name)}</strong>
-       <div class="rank">No CPI ${CPI_YEAR} data</div>`;
+       <div class="rank">No CPI ${CPI_YEAR} data</div>
+       ${fatfHtml}`;
 
   const [x, y] = d3.pointer(event, svg.node());
   tooltip
@@ -162,6 +169,12 @@ function renderDetails(alpha3) {
   const total = Object.keys(CPI_DATA).length;
   const rank = rankByAlpha3[alpha3];
   const tier = scoreTier(cpi.score);
+  const fatf = FATF_STATUS[alpha3];
+  const fatfValue = fatf
+    ? `<span style="color:${fatf.color};">${fatf.label}</span>`
+    : `<span style="color:var(--muted);">Not listed</span>`;
+  const stats = (typeof window.crimeStats === "function") ? window.crimeStats() : null;
+  const eventCount = stats && stats.byCountry[alpha3] ? stats.byCountry[alpha3] : 0;
 
   detailsEl.innerHTML = `
     <h2>${escapeHtml(cpi.name)} <small style="color:var(--muted);font-weight:400;">(${alpha3})</small></h2>
@@ -179,8 +192,16 @@ function renderDetails(alpha3) {
         <div class="value">${Math.round(((total - rank + 1) / total) * 100)}<span style="font-size:12px;color:var(--muted);">th</span></div>
       </div>
       <div class="stat">
-        <div class="label">Tier</div>
+        <div class="label">CPI tier</div>
         <div class="value" style="font-size:14px;">${tier}</div>
+      </div>
+      <div class="stat">
+        <div class="label">FATF AML status</div>
+        <div class="value" style="font-size:14px;">${fatfValue}</div>
+      </div>
+      <div class="stat">
+        <div class="label">Tracked events</div>
+        <div class="value">${eventCount}<span style="font-size:12px;color:var(--muted);"> in feed</span></div>
       </div>
     </div>`;
 }

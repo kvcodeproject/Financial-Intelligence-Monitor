@@ -16,6 +16,37 @@
   </header>
 
   <main class="app-main">
+    <section class="kpi-strip" aria-label="Global indicators">
+      <div class="kpi">
+        <div class="kpi-label">Countries assessed</div>
+        <div class="kpi-value" id="kpi-countries">—</div>
+        <div class="kpi-sub">CPI 2024 dataset</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Mean CPI score</div>
+        <div class="kpi-value" id="kpi-mean-cpi">—</div>
+        <div class="kpi-sub">0 = corrupt • 100 = clean</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">FATF black / grey</div>
+        <div class="kpi-value" id="kpi-fatf">—</div>
+        <div class="kpi-sub">Call for action / increased monitoring</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Events (24h)</div>
+        <div class="kpi-value" id="kpi-events">—</div>
+        <div class="kpi-sub">From financial crime feed</div>
+      </div>
+      <div class="kpi kpi-wide">
+        <div class="kpi-label">Cleanest jurisdiction</div>
+        <div class="kpi-value kpi-tiny" id="kpi-cleanest">—</div>
+      </div>
+      <div class="kpi kpi-wide">
+        <div class="kpi-label">Most corrupt jurisdiction</div>
+        <div class="kpi-value kpi-tiny" id="kpi-worst">—</div>
+      </div>
+    </section>
+
     <section class="controls">
       <label for="search">Search country</label>
       <input id="search" type="text" placeholder="e.g. Germany" autocomplete="off" />
@@ -123,8 +154,10 @@
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
   <script src="data.js"></script>
+  <script src="risk-data.js"></script>
   <script src="crime-data.js"></script>
   <script src="app.js"></script>
   <script src="crime.js"></script>
+  <script src="kpi.js"></script>
 </body>
 </html>

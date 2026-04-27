@@ -25,6 +25,16 @@ const state = {
 
 initCrimePanel();
 
+window.crimeStats = function () {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const last24h = state.events.filter((e) => e.ts >= cutoff).length;
+  const byCountry = {};
+  state.events.forEach((e) => {
+    byCountry[e.country] = (byCountry[e.country] || 0) + 1;
+  });
+  return { total: state.events.length, last24h, byCountry };
+};
+
 function initCrimePanel() {
   if (!feedEl) return;
   renderFilters();
