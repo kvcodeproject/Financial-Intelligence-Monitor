@@ -3,16 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Corruption Perceptions Index — Interactive World Map</title>
+  <title>Financial Intelligence Monitor — Corruption · AML · Live Enforcement</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h1>Corruption Perceptions Index</h1>
-    <p class="subtitle">
-      Interactive world map of country corruption scores.
-      Higher score = cleaner; lower score = more corrupt. Source: Transparency International CPI 2024.
-    </p>
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">FIM</span>
+      <div class="brand-text">
+        <div class="brand-name">Financial Intelligence Monitor</div>
+        <div class="brand-tag">CPI 2024 · FATF AML risk · Live enforcement feed</div>
+      </div>
+      <span class="version-pill" data-version-pill>v1.0.0</span>
+    </div>
+    <div class="topbar-meta">
+      <div class="utc-clock" aria-label="Current UTC time">
+        <span class="clock-dot live-dot"></span>
+        <span class="clock-grid">
+          <span id="utc-date">—</span>
+          <span><span id="utc-time">—</span> UTC</span>
+        </span>
+      </div>
+      <a class="topbar-btn" href="#downloads">Download desktop app</a>
+    </div>
   </header>
 
   <main class="app-main">
@@ -86,6 +99,49 @@
       </p>
     </section>
 
+    <section id="downloads" class="downloads" aria-label="Desktop downloads">
+      <header class="downloads-head">
+        <h2>Desktop downloads</h2>
+        <span class="downloads-version">Latest <strong data-version-pill>v1.0.0</strong></span>
+      </header>
+      <p class="downloads-lead">
+        Native installers built from this repository via GitHub Actions. Pick the build that matches your operating system.
+      </p>
+      <div class="dl-grid">
+        <a class="dl-card" href="https://github.com/kvcodeproject/Financial-Intelligence-Monitor/releases/latest" target="_blank" rel="noopener">
+          <div class="dl-os">Windows</div>
+          <div class="dl-files">
+            <span class="dl-pill">Setup.exe (NSIS)</span>
+            <span class="dl-pill">Portable.exe</span>
+          </div>
+          <div class="dl-arch">x64 · 7-Zip · ~110 MB</div>
+        </a>
+        <a class="dl-card" href="https://github.com/kvcodeproject/Financial-Intelligence-Monitor/releases/latest" target="_blank" rel="noopener">
+          <div class="dl-os">macOS</div>
+          <div class="dl-files">
+            <span class="dl-pill">.dmg (Intel)</span>
+            <span class="dl-pill">.dmg (Apple Silicon)</span>
+          </div>
+          <div class="dl-arch">x64 + arm64 · ~115 MB</div>
+        </a>
+        <a class="dl-card" href="https://github.com/kvcodeproject/Financial-Intelligence-Monitor/releases/latest" target="_blank" rel="noopener">
+          <div class="dl-os">Linux</div>
+          <div class="dl-files">
+            <span class="dl-pill">.AppImage</span>
+            <span class="dl-pill">.deb</span>
+          </div>
+          <div class="dl-arch">x64 · ~120 MB</div>
+        </a>
+      </div>
+      <p class="downloads-hint">
+        No installer yet? Push a <code>vX.Y.Z</code> Git tag and the
+        <code>.github/workflows/release.yml</code> pipeline will build all three
+        platforms and attach them to a GitHub Release. Locally, run
+        <code>npm install &amp;&amp; npm run build:win</code> (or
+        <code>:mac</code> / <code>:linux</code>).
+      </p>
+    </section>
+
     <section class="methodology" aria-label="Methodology">
       <details>
         <summary><h2>Methodology</h2></summary>
@@ -144,11 +200,27 @@
     </section>
   </main>
 
-  <footer class="app-footer">
-    <small>
-      Geometry: world-atlas (Natural Earth). Scores: Transparency International CPI 2024.
-      Built with D3 v7.
-    </small>
+  <footer class="statusbar" role="contentinfo">
+    <div class="sb-section sb-left">
+      <span class="sb-status">
+        <span id="sb-status-dot" class="sb-status-dot"></span>
+        <span id="sb-status-text">OPERATIONAL</span>
+      </span>
+      <span class="sb-sep">·</span>
+      <span>FIM <span id="sb-version">v1.0.0</span></span>
+      <span class="sb-sep">·</span>
+      <span id="sb-platform">Web</span>
+    </div>
+    <div class="sb-section sb-center">
+      <span>Sources: TI CPI 2024 · FATF · world-atlas · public reporting</span>
+      <span class="sb-sep">·</span>
+      <span>Last refresh <span id="sb-last">—</span></span>
+    </div>
+    <div class="sb-section sb-right">
+      <a href="#downloads">.exe</a>
+      <a href="#downloads">.dmg</a>
+      <a href="#downloads">.AppImage</a>
+    </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
@@ -159,5 +231,6 @@
   <script src="app.js"></script>
   <script src="crime.js"></script>
   <script src="kpi.js"></script>
+  <script src="status-bar.js"></script>
 </body>
 </html>
