@@ -55,6 +55,7 @@ function openSubmit() {
         };
         if (typeof window.crimeAddEvent === "function") {
           window.crimeAddEvent(ev);
+          if (window.fimAudit) window.fimAudit.log("SUBMIT", ev.country, ev.title);
           window.fimModal.toast(`Submitted: ${ev.title.slice(0, 50)}`, "ok");
           window.fimModal.close();
         } else {

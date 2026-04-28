@@ -121,12 +121,17 @@ function showTooltip(event, feature) {
   const fatfHtml = fatf
     ? `<div class="fatf" style="color:${fatf.color};">FATF: ${fatf.label}</div>`
     : "";
+  const risk = (a3 && typeof window.fimRisk === "function") ? window.fimRisk(a3) : null;
+  const riskHtml = risk
+    ? `<div class="fatf" style="color:${risk.color};">Risk ${risk.total} · ${risk.tier}</div>`
+    : "";
 
   const html = cpi
     ? `<strong>${escapeHtml(name)}</strong>
        <div class="score" style="color:${colorScale(cpi.score)}">${cpi.score}<span style="font-size:11px;color:var(--muted);"> / 100</span></div>
        <div class="rank">Rank ${rank} of ${total} • CPI ${CPI_YEAR}</div>
-       ${fatfHtml}`
+       ${fatfHtml}
+       ${riskHtml}`
     : `<strong>${escapeHtml(name)}</strong>
        <div class="rank">No CPI ${CPI_YEAR} data</div>
        ${fatfHtml}`;
@@ -151,6 +156,7 @@ function selectCountry(alpha3) {
   renderDetails(alpha3);
   const name = (CPI_DATA[alpha3] && CPI_DATA[alpha3].name) || alpha3;
   document.dispatchEvent(new CustomEvent("country:select", { detail: { alpha3, name } }));
+  if (window.fimAudit) window.fimAudit.log("SELECT", name, alpha3);
 }
 
 function clearSelection() {
@@ -175,10 +181,25 @@ function renderDetails(alpha3) {
     : `<span style="color:var(--muted);">Not listed</span>`;
   const stats = (typeof window.crimeStats === "function") ? window.crimeStats() : null;
   const eventCount = stats && stats.byCountry[alpha3] ? stats.byCountry[alpha3] : 0;
+  const risk = (typeof window.fimRisk === "function") ? window.fimRisk(alpha3) : null;
+  const watched = (typeof window.fimWatchlist === "object") && window.fimWatchlist.has(alpha3);
+  const watchLabel = watched ? "Remove from watchlist" : "Add to watchlist";
+
+  const riskTile = risk ? `
+      <div class="stat risk-tile" style="border-color:${risk.color}55;">
+        <div class="label">Composite risk</div>
+        <div class="value" style="color:${risk.color}">${risk.total}<span style="font-size:12px;color:var(--muted);"> / 100</span></div>
+        <div class="risk-bar"><span style="width:${risk.total}%;background:${risk.color};"></span></div>
+        <div class="risk-tier" style="color:${risk.color}">${risk.tier}</div>
+      </div>` : "";
 
   detailsEl.innerHTML = `
-    <h2>${escapeHtml(cpi.name)} <small style="color:var(--muted);font-weight:400;">(${alpha3})</small></h2>
+    <div class="details-head">
+      <h2>${escapeHtml(cpi.name)} <small style="color:var(--muted);font-weight:400;">(${alpha3})</small></h2>
+      <button type="button" class="btn ${watched ? "watch-on" : ""}" data-watch="${alpha3}">${watchLabel}</button>
+    </div>
     <div class="grid">
+      ${riskTile}
       <div class="stat">
         <div class="label">CPI ${CPI_YEAR} score</div>
         <div class="value" style="color:${colorScale(cpi.score)}">${cpi.score}<span style="font-size:12px;color:var(--muted);"> / 100</span></div>
@@ -204,6 +225,14 @@ function renderDetails(alpha3) {
         <div class="value">${eventCount}<span style="font-size:12px;color:var(--muted);"> in feed</span></div>
       </div>
     </div>`;
+
+  const watchBtn = detailsEl.querySelector("[data-watch]");
+  if (watchBtn) {
+    watchBtn.addEventListener("click", () => {
+      window.fimWatchlist.toggle(alpha3);
+      renderDetails(alpha3);
+    });
+  }
 }
 
 function scoreTier(s) {

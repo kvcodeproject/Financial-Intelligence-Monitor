@@ -70,6 +70,8 @@
         <button id="btn-submit" type="button" class="btn primary">+ Submit intel</button>
         <button id="btn-share"  type="button" class="btn">Share internal</button>
         <button id="btn-export" type="button" class="btn">Export DOCX</button>
+        <button id="btn-csv"    type="button" class="btn">Export CSV</button>
+        <button id="btn-audit"  type="button" class="btn">Audit log</button>
       </div>
       <div class="toolbar-right">
         <span class="toolbar-meta">Engine status: <span class="ok">online</span></span>
@@ -96,6 +98,15 @@
       </div>
 
       <aside class="dashboard-side">
+        <section class="watchlist-panel" aria-label="Watchlist">
+          <header class="watchlist-head">
+            <h2>Watchlist</h2>
+            <span class="result-count" id="watchlist-count">0</span>
+          </header>
+          <ul class="watchlist-list" id="watchlist-list"></ul>
+          <p class="watchlist-empty form-hint" id="watchlist-empty">No countries pinned. Open a country and click <em>Add to watchlist</em>.</p>
+        </section>
+
         <section class="alerts-panel" aria-label="Detected anomalies">
           <header class="alerts-head">
             <span class="live-dot"></span>
@@ -278,9 +289,13 @@
   <script src="kpi.js"></script>
   <script src="status-bar.js"></script>
   <script src="modal.js"></script>
+  <script src="audit.js"></script>
+  <script src="risk-score.js"></script>
+  <script src="watchlist.js"></script>
   <script src="metrics.js"></script>
   <script src="submit.js"></script>
   <script src="share.js"></script>
   <script src="export.js"></script>
+  <script src="csv.js"></script>
 </body>
 </html>

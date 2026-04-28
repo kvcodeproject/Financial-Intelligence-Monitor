@@ -51,6 +51,10 @@
       "submit.js",
       "share.js",
       "export.js",
+      "csv.js",
+      "audit.js",
+      "risk-score.js",
+      "watchlist.js",
       "electron/**/*",
       "!**/.DS_Store",
       "!**/*.map"

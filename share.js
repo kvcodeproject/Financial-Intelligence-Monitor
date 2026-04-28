@@ -81,6 +81,7 @@ function openShare() {
           document.execCommand("copy");
           window.fimModal.toast("Permalink copied", "ok");
         }
+        if (window.fimAudit) window.fimAudit.log("SHARE_COPY", scopeLabel, "permalink");
       });
       body.querySelectorAll("button[data-send]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -90,6 +91,7 @@ function openShare() {
           saveLog(log);
           btn.textContent = "Sent ✓";
           btn.disabled = true;
+          if (window.fimAudit) window.fimAudit.log("SHARE_SEND", scopeLabel, channel.name);
           window.fimModal.toast(`Pushed to ${channel.name} (${channel.recipients} recipients)`, "ok");
         });
       });

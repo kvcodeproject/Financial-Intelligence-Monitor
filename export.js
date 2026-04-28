@@ -111,6 +111,7 @@ async function runExport() {
   const blob = await Packer.toBlob(doc);
   const filename = `${reportTitle.replace(/[^\w\-]+/g, "_")}_${dateStr}.docx`;
   download(blob, filename);
+  if (window.fimAudit) window.fimAudit.log("EXPORT_DOCX", scope || "global", `${events.length} events`);
   window.fimModal && window.fimModal.toast(`Exported ${filename}`, "ok");
 }
 
