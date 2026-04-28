@@ -46,6 +46,11 @@
       "crime.js",
       "kpi.js",
       "status-bar.js",
+      "modal.js",
+      "metrics.js",
+      "submit.js",
+      "share.js",
+      "export.js",
       "electron/**/*",
       "!**/.DS_Store",
       "!**/*.map"

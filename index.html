@@ -58,6 +58,22 @@
         <div class="kpi-label">Most corrupt jurisdiction</div>
         <div class="kpi-value kpi-tiny" id="kpi-worst">—</div>
       </div>
+      <div class="kpi">
+        <div class="kpi-label">Active anomalies</div>
+        <div class="kpi-value" id="kpi-alerts">0</div>
+        <div class="kpi-sub">From metrics detection engine</div>
+      </div>
+    </section>
+
+    <section class="action-toolbar" aria-label="Workspace actions">
+      <div class="toolbar-left">
+        <button id="btn-submit" type="button" class="btn primary">+ Submit intel</button>
+        <button id="btn-share"  type="button" class="btn">Share internal</button>
+        <button id="btn-export" type="button" class="btn">Export DOCX</button>
+      </div>
+      <div class="toolbar-right">
+        <span class="toolbar-meta">Engine status: <span class="ok">online</span></span>
+      </div>
     </section>
 
     <section class="controls">
@@ -66,17 +82,33 @@
       <span id="result-count" class="result-count"></span>
     </section>
 
-    <section class="map-wrapper">
-      <svg id="map" role="img" aria-label="World choropleth of corruption scores"></svg>
-      <div id="tooltip" class="tooltip" hidden></div>
-      <div id="legend" class="legend" aria-hidden="true"></div>
-    </section>
+    <div class="dashboard">
+      <div class="dashboard-main">
+        <section class="map-wrapper">
+          <svg id="map" role="img" aria-label="World choropleth of corruption scores"></svg>
+          <div id="tooltip" class="tooltip" hidden></div>
+          <div id="legend" class="legend" aria-hidden="true"></div>
+        </section>
 
-    <section id="details" class="details" aria-live="polite">
-      <p class="hint">Hover or click any country to see details.</p>
-    </section>
+        <section id="details" class="details" aria-live="polite">
+          <p class="hint">Hover or click any country to see details.</p>
+        </section>
+      </div>
 
-    <section class="crime-panel" aria-label="Financial crime live feed">
+      <aside class="dashboard-side">
+        <section class="alerts-panel" aria-label="Detected anomalies">
+          <header class="alerts-head">
+            <span class="live-dot"></span>
+            <h2>Metrics detection</h2>
+            <span class="result-count" id="alerts-count">0</span>
+          </header>
+          <ul class="alerts-list" id="alerts-list">
+            <li class="alert empty">Initialising detection engine…</li>
+          </ul>
+          <p class="alerts-hint">Volume spikes · FATF call-for-action activity · material amounts · type clustering. Click an alert to scope the dashboard.</p>
+        </section>
+
+        <section class="crime-panel" aria-label="Financial crime live feed">
       <header class="crime-header">
         <div class="crime-title">
           <span class="live-dot" id="crime-live-dot"></span>
@@ -98,6 +130,8 @@
         FinCEN/SEC/DOJ, Europol, and national FIU sources.
       </p>
     </section>
+      </aside>
+    </div>
 
     <section id="downloads" class="downloads" aria-label="Desktop downloads">
       <header class="downloads-head">
@@ -200,6 +234,16 @@
     </section>
   </main>
 
+  <div id="modal-root" class="modal-root" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-head">
+        <h2 id="modal-title">—</h2>
+        <button id="modal-close" type="button" class="modal-close" aria-label="Close">×</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
   <footer class="statusbar" role="contentinfo">
     <div class="sb-section sb-left">
       <span class="sb-status">
@@ -225,6 +269,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
   <script src="data.js"></script>
   <script src="risk-data.js"></script>
   <script src="crime-data.js"></script>
@@ -232,5 +277,10 @@
   <script src="crime.js"></script>
   <script src="kpi.js"></script>
   <script src="status-bar.js"></script>
+  <script src="modal.js"></script>
+  <script src="metrics.js"></script>
+  <script src="submit.js"></script>
+  <script src="share.js"></script>
+  <script src="export.js"></script>
 </body>
 </html>

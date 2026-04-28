@@ -35,6 +35,36 @@ window.crimeStats = function () {
   return { total: state.events.length, last24h, byCountry };
 };
 
+window.crimeRecent = function (windowMs) {
+  const cutoff = Date.now() - windowMs;
+  return state.events.filter((e) => e.ts >= cutoff);
+};
+
+window.crimeAddEvent = function (ev) {
+  const event = {
+    id: `user-${state.nextId++}`,
+    ts: ev.ts || Date.now(),
+    fresh: true,
+    country: ev.country,
+    type: ev.type,
+    title: ev.title,
+    agency: ev.agency,
+    amountUsd: ev.amountUsd,
+    sourceUrl: ev.sourceUrl,
+    submitter: ev.submitter,
+    notes: ev.notes
+  };
+  state.events.unshift(event);
+  if (state.events.length > MAX_EVENTS) state.events.length = MAX_EVENTS;
+  renderFeed();
+  setTimeout(() => {
+    event.fresh = false;
+    const node = feedEl && feedEl.querySelector(`li[data-id="${event.id}"]`);
+    if (node) node.classList.remove("fresh");
+  }, 2000);
+  return event;
+};
+
 function initCrimePanel() {
   if (!feedEl) return;
   renderFilters();
