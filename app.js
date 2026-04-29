@@ -101,7 +101,13 @@ function drawCountries() {
 
 function fillFor(feature) {
   const a3 = alpha3Of(feature);
-  const cpi = a3 ? CPI_DATA[a3] : null;
+  if (!a3) return NO_DATA_COLOR;
+  const modes = window.fimHeatmapModes;
+  const mode = window.fimMapMode || "cpi";
+  if (modes && modes[mode] && typeof modes[mode].fill === "function") {
+    return modes[mode].fill(a3) || NO_DATA_COLOR;
+  }
+  const cpi = CPI_DATA[a3];
   return cpi ? colorScale(cpi.score) : NO_DATA_COLOR;
 }
 
@@ -321,11 +327,16 @@ function attachZoom() {
 }
 
 function renderLegend() {
-  const legend = d3.select("#legend");
+  const modes = window.fimHeatmapModes;
+  const mode = window.fimMapMode || "cpi";
+  if (modes && modes[mode] && typeof modes[mode].legend === "function") {
+    d3.select("#legend").html(modes[mode].legend());
+    return;
+  }
   const stops = [0, 25, 50, 75, 100]
     .map((v) => `${colorScale(v)} ${v}%`)
     .join(", ");
-  legend.html(`
+  d3.select("#legend").html(`
     <div style="margin-bottom:4px;color:var(--text);">CPI ${CPI_YEAR} score</div>
     <div class="scale">
       <div class="gradient" style="background: linear-gradient(to right, ${stops});"></div>
@@ -334,6 +345,13 @@ function renderLegend() {
     <div style="margin-top:6px;"><span class="nd"></span>No data</div>
   `);
 }
+
+window.fimRedrawMap = function () {
+  if (countriesGroup) {
+    countriesGroup.selectAll("path.country").attr("fill", fillFor);
+  }
+};
+window.fimRedrawLegend = renderLegend;
 
 function svgSize() {
   const node = svg.node();

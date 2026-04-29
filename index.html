@@ -92,6 +92,13 @@
       <label for="search">Search country</label>
       <input id="search" type="text" placeholder="e.g. Germany" autocomplete="off" />
       <span id="result-count" class="result-count"></span>
+      <div class="heatmap-toggle" role="group" aria-label="Map color mode">
+        <span class="heatmap-label">Heatmap</span>
+        <button type="button" class="on" data-heatmap="cpi">CPI</button>
+        <button type="button"          data-heatmap="gti">GTI</button>
+        <button type="button"          data-heatmap="sanctions">Sanctions</button>
+        <button type="button"          data-heatmap="risk">Risk</button>
+      </div>
     </section>
 
     <div class="dashboard">
@@ -303,6 +310,7 @@
   <script src="modal.js"></script>
   <script src="audit.js"></script>
   <script src="risk-score.js"></script>
+  <script src="heatmap.js"></script>
   <script src="watchlist.js"></script>
   <script src="metrics.js"></script>
   <script src="submit.js"></script>
