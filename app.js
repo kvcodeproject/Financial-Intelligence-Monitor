@@ -121,6 +121,16 @@ function showTooltip(event, feature) {
   const fatfHtml = fatf
     ? `<div class="fatf" style="color:${fatf.color};">FATF: ${fatf.label}</div>`
     : "";
+  const sanc = a3 && typeof sanctionsFor === "function" ? sanctionsFor(a3) : null;
+  const sancTier = sanc && typeof sanctionsTier === "function" ? sanctionsTier(a3) : null;
+  const sancHtml = sanc
+    ? `<div class="fatf" style="color:${sancTier ? sancTier.color : "#d6604d"};">Sanctions: ${sancTier ? sancTier.label : sanc.severity}</div>`
+    : "";
+  const gti = a3 && typeof GTI_DATA !== "undefined" ? GTI_DATA[a3] : null;
+  const gtiT = gti && typeof gtiTier === "function" ? gtiTier(gti.score) : null;
+  const gtiHtml = gti
+    ? `<div class="fatf" style="color:${gtiT ? gtiT.color : "#888"};">GTI ${gti.score.toFixed(2)} · ${gtiT ? gtiT.label : ""}</div>`
+    : "";
   const risk = (a3 && typeof window.fimRisk === "function") ? window.fimRisk(a3) : null;
   const riskHtml = risk
     ? `<div class="fatf" style="color:${risk.color};">Risk ${risk.total} · ${risk.tier}</div>`
@@ -131,10 +141,14 @@ function showTooltip(event, feature) {
        <div class="score" style="color:${colorScale(cpi.score)}">${cpi.score}<span style="font-size:11px;color:var(--muted);"> / 100</span></div>
        <div class="rank">Rank ${rank} of ${total} • CPI ${CPI_YEAR}</div>
        ${fatfHtml}
+       ${sancHtml}
+       ${gtiHtml}
        ${riskHtml}`
     : `<strong>${escapeHtml(name)}</strong>
        <div class="rank">No CPI ${CPI_YEAR} data</div>
-       ${fatfHtml}`;
+       ${fatfHtml}
+       ${sancHtml}
+       ${gtiHtml}`;
 
   const [x, y] = d3.pointer(event, svg.node());
   tooltip
@@ -224,6 +238,38 @@ function renderDetails(alpha3) {
         <div class="label">Tracked events</div>
         <div class="value">${eventCount}<span style="font-size:12px;color:var(--muted);"> in feed</span></div>
       </div>
+      ${(() => {
+        const g = (typeof GTI_DATA !== "undefined") ? GTI_DATA[alpha3] : null;
+        if (!g) return `
+          <div class="stat">
+            <div class="label">GTI 2024</div>
+            <div class="value" style="font-size:14px;color:var(--muted);">No data</div>
+          </div>`;
+        const t = (typeof gtiTier === "function") ? gtiTier(g.score) : { label: "—", color: "#888" };
+        return `
+          <div class="stat">
+            <div class="label">Terrorism impact (GTI)</div>
+            <div class="value" style="color:${t.color}">${g.score.toFixed(2)}<span style="font-size:12px;color:var(--muted);"> / 10</span></div>
+            <div style="font-size:11px;color:${t.color};font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;">${t.label}</div>
+          </div>`;
+      })()}
+      ${(() => {
+        const s = (typeof sanctionsFor === "function") ? sanctionsFor(alpha3) : null;
+        if (!s) return `
+          <div class="stat">
+            <div class="label">Sanctions exposure</div>
+            <div class="value" style="font-size:14px;color:var(--muted);">None tracked</div>
+          </div>`;
+        const t = (typeof sanctionsTier === "function") ? sanctionsTier(alpha3) : null;
+        const programs = (s.programs || []).slice(0, 4).join(", ") + (s.programs && s.programs.length > 4 ? "…" : "");
+        return `
+          <div class="stat sanctions-tile" style="grid-column:span 2;border-color:${t ? t.color + "55" : "var(--border)"};">
+            <div class="label">Sanctions exposure</div>
+            <div class="value" style="font-size:14px;color:${t ? t.color : ""};">${t ? t.label : s.severity}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px;">${programs} · since ${s.sinceYear}${s.designations ? ` · ~${s.designations.toLocaleString()} designations` : ""}</div>
+            <div style="font-size:11px;color:var(--text);margin-top:4px;line-height:1.35;">${escapeHtml(s.summary)}</div>
+          </div>`;
+      })()}
     </div>`;
 
   const watchBtn = detailsEl.querySelector("[data-watch]");

@@ -1,4 +1,4 @@
-/* global CPI_DATA, FATF_STATUS, FATF_BLACK */
+/* global CPI_DATA, FATF_STATUS, FATF_BLACK, SANCTIONS_DATA, GTI_DATA */
 "use strict";
 
 const REFRESH_MS = 5000;
@@ -8,6 +8,9 @@ const AMOUNT_THRESHOLD = 500_000_000;
 const BLACKLIST_WINDOW_MS = 60 * 60 * 1000;
 const TYPE_CLUSTER_WINDOW_MS = 60 * 60 * 1000;
 const TYPE_CLUSTER_THRESHOLD = 5;
+const SANCTION_HIT_WINDOW_MS = 30 * 60 * 1000;
+const TERROR_HOTSPOT_GTI_MIN = 7.0;
+const TERROR_HOTSPOT_WINDOW_MS = 60 * 60 * 1000;
 
 const listEl = document.getElementById("alerts-list");
 const countEl = document.getElementById("alerts-count");
@@ -79,7 +82,38 @@ function detect(events) {
     }
   });
 
-  // 4. Type clustering (≥5 events of same type in last hour)
+  // 4. Sanctioned-jurisdiction activity (last 30 min)
+  events.forEach((e) => {
+    const sanc = (typeof SANCTIONS_DATA !== "undefined") ? SANCTIONS_DATA[e.country] : null;
+    if (sanc && (sanc.severity === "comprehensive" || sanc.severity === "sectoral")
+        && now - e.ts <= SANCTION_HIT_WINDOW_MS) {
+      out.push({
+        severity: sanc.severity === "comprehensive" ? "critical" : "high",
+        kind: "SANCTION_HIT",
+        country: e.country,
+        title: `Sanctioned jurisdiction activity (${sanc.severity})`,
+        detail: `${countryName(e.country)} • ${e.title}`,
+        ts: e.ts
+      });
+    }
+  });
+
+  // 5. Terrorism hotspot activity (GTI ≥ 7 + recent event)
+  events.forEach((e) => {
+    const g = (typeof GTI_DATA !== "undefined") ? GTI_DATA[e.country] : null;
+    if (g && g.score >= TERROR_HOTSPOT_GTI_MIN && now - e.ts <= TERROR_HOTSPOT_WINDOW_MS) {
+      out.push({
+        severity: g.score >= 8 ? "critical" : "high",
+        kind: "TERROR_HOTSPOT",
+        country: e.country,
+        title: `Terrorism hotspot activity (GTI ${g.score.toFixed(2)})`,
+        detail: `${countryName(e.country)} • ${e.title}`,
+        ts: e.ts
+      });
+    }
+  });
+
+  // 6. Type clustering (≥5 events of same type in last hour)
   const byType = {};
   events.forEach((e) => {
     if (now - e.ts <= TYPE_CLUSTER_WINDOW_MS) {

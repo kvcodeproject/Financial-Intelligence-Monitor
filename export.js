@@ -1,4 +1,4 @@
-/* global CPI_DATA, FATF_STATUS, CRIME_TYPES */
+/* global CPI_DATA, FATF_STATUS, GTI_DATA, SANCTIONS_DATA, CRIME_TYPES, gtiTier, sanctionsTier */
 "use strict";
 
 const exportBtn = document.getElementById("btn-export");
@@ -40,13 +40,29 @@ async function runExport() {
   // --- Section 1: Profile
   children.push(heading("1. Country profile", HeadingLevel.HEADING_1));
   if (scope && cpi) {
+    const gti = (typeof GTI_DATA !== "undefined") ? GTI_DATA[scope] : null;
+    const gtiText = gti
+      ? `${gti.score.toFixed(2)} / 10 · ${(typeof gtiTier === "function" ? (gtiTier(gti.score).label) : "")}`
+      : "No data";
+    const sanc = (typeof SANCTIONS_DATA !== "undefined") ? SANCTIONS_DATA[scope] : null;
+    const sancText = sanc
+      ? `${(typeof sanctionsTier === "function" ? sanctionsTier(scope).label : sanc.severity)} · ${(sanc.programs || []).join(", ")} · since ${sanc.sinceYear}${sanc.designations ? ` · ~${sanc.designations.toLocaleString()} designations` : ""}`
+      : "None tracked";
+    const risk = (typeof window.fimRisk === "function") ? window.fimRisk(scope) : null;
     children.push(table([
-      ["Country",            `${cpi.name} (${scope})`],
-      ["CPI 2024 score",     `${cpi.score} / 100`],
-      ["FATF AML status",    fatf ? `${fatf.label} (${fatf.tier})` : "Not listed"],
-      ["Tracked events",     `${(stats && stats.byCountry[scope]) || 0} in feed`],
-      ["Period covered",     `Last 7 days (rolling)`]
+      ["Country",                `${cpi.name} (${scope})`],
+      ["CPI 2024 score",         `${cpi.score} / 100`],
+      ["FATF AML status",        fatf ? `${fatf.label} (${fatf.tier})` : "Not listed"],
+      ["GTI 2024",               gtiText],
+      ["Sanctions exposure",     sancText],
+      ["Composite risk",         risk ? `${risk.total} / 100 · ${risk.tier}` : "—"],
+      ["Tracked events",         `${(stats && stats.byCountry[scope]) || 0} in feed`],
+      ["Period covered",         `Last 7 days (rolling)`]
     ], D));
+    if (sanc && sanc.summary) {
+      children.push(blank());
+      children.push(line(`Sanctions context: ${sanc.summary}`, true));
+    }
   } else {
     children.push(line("Global view — no specific country selected. The brief covers all events captured in the live feed."));
     if (stats) {

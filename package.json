@@ -41,6 +41,8 @@
       "styles.css",
       "data.js",
       "risk-data.js",
+      "gti-data.js",
+      "sanctions-data.js",
       "crime-data.js",
       "app.js",
       "crime.js",
