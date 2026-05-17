@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Financial Intelligence Monitor — Interactive World Map</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#121a30; --ink:#e6ecff; --muted:#8a97b8;
+    --accent:#4da3ff; --border:#26314f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{padding:14px 20px;border-bottom:1px solid var(--border);
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between}
+  h1{font-size:17px;margin:0;letter-spacing:.3px}
+  h1 span{color:var(--muted);font-weight:400;font-size:13px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  button{background:var(--panel);color:var(--ink);border:1px solid var(--border);
+    padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:.15s}
+  button:hover{border-color:var(--accent)}
+  button.active{background:var(--accent);color:#04132b;border-color:var(--accent);font-weight:600}
+  #wrap{position:relative;width:100%;height:calc(100% - 58px)}
+  svg{width:100%;height:100%;display:block;background:
+    radial-gradient(ellipse at 50% 40%, #16203c 0%, #0b1020 70%)}
+  .country{stroke:#0b1020;stroke-width:.4px;cursor:pointer;transition:fill .2s}
+  .country:hover{stroke:#fff;stroke-width:1px}
+  .clabel{font-size:7px;fill:#cdd8ff;pointer-events:none;
+    text-anchor:middle;paint-order:stroke;stroke:#0b1020;stroke-width:1.6px}
+  .graticule{fill:none;stroke:#1c2742;stroke-width:.5px}
+  #tooltip{position:absolute;pointer-events:none;background:rgba(8,13,28,.96);
+    border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:12px;
+    min-width:200px;opacity:0;transition:opacity .12s;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #tooltip h3{margin:0 0 6px;font-size:13px}
+  #tooltip .row{display:flex;justify-content:space-between;gap:16px;color:var(--muted)}
+  #tooltip .row b{color:var(--ink)}
+  #legend{position:absolute;left:18px;bottom:18px;background:rgba(8,13,28,.85);
+    border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:11px}
+  #legend .bar{height:10px;width:200px;border-radius:4px;margin:6px 0}
+  #legend .scale{display:flex;justify-content:space-between;color:var(--muted)}
+  footer{position:absolute;right:18px;bottom:18px;color:var(--muted);font-size:11px;text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <h1>Financial Intelligence Monitor <span>· flat world projection · macro risk indices</span></h1>
+  <div class="controls" id="controls">
+    <button data-metric="scam" class="active">Scam / Fraud</button>
+    <button data-metric="embezzlement">Embezzlement</button>
+    <button data-metric="enforcement">Law Enforcement</button>
+    <button data-metric="composite">Composite Risk</button>
+  </div>
+</header>
+<div id="wrap">
+  <svg id="map"></svg>
+  <div id="tooltip"></div>
+  <div id="legend">
+    <div id="legTitle">Risk index (0 low – 100 high)</div>
+    <div class="bar" id="legBar"></div>
+    <div class="scale"><span>0</span><span>50</span><span>100</span></div>
+  </div>
+  <footer>Indicative macro data for analysis demos · not an official source</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="data.js"></script>
+<script>
+const svg = d3.select("#map");
+const tooltip = d3.select("#tooltip");
+let metric = "scam";
+const META = {
+  scam:        {label:"Scam / Fraud prevalence",        color:d3.interpolateOrRd},
+  embezzlement:{label:"Embezzlement / corruption",      color:d3.interpolatePuRd},
+  enforcement: {label:"Law-enforcement effectiveness",  color:d3.interpolateGreens},
+  composite:   {label:"Composite financial-crime risk", color:d3.interpolateInferno},
+};
+
+function size(){ const r=document.getElementById("wrap").getBoundingClientRect();
+  return [r.width, r.height]; }
+
+let countries, projection, path, gMap, gLab;
+
+function draw(world){
+  const [w,h] = size();
+  svg.attr("viewBox",`0 0 ${w} ${h}`);
+  // Flat earth style: equirectangular (plate carrée) projection
+  projection = d3.geoEquirectangular().fitSize([w, h], topojson.feature(world, world.objects.countries));
+  path = d3.geoPath(projection);
+
+  const graticule = d3.geoGraticule10();
+  svg.append("path").datum(graticule).attr("class","graticule").attr("d",path);
+
+  countries = topojson.feature(world, world.objects.countries).features;
+
+  gMap = svg.append("g");
+  gLab = svg.append("g");
+
+  gMap.selectAll("path").data(countries).join("path")
+    .attr("class","country")
+    .attr("d", path)
+    .on("mousemove", showTip)
+    .on("mouseleave", () => tooltip.style("opacity",0));
+
+  gLab.selectAll("text").data(countries.filter(d=>path.area(d) > 90))
+    .join("text").attr("class","clabel")
+    .attr("transform", d => `translate(${path.centroid(d)})`)
+    .text(d => d.properties.name);
+
+  color();
+}
+
+function val(d){
+  const rec = DATA[d.properties.name];
+  if(!rec) return null;
+  if(metric==="composite")
+    return Math.round((rec.scam + rec.embezzlement + (100-rec.enforcement))/3);
+  return rec[metric];
+}
+
+function color(){
+  const m = META[metric];
+  const scale = d3.scaleSequential(m.color).domain([0,100]);
+  gMap.selectAll("path").transition().duration(350)
+    .attr("fill", d => { const v=val(d); return v==null ? "#1a2238" : scale(v); });
+  // legend gradient
+  const stops = d3.range(0,1.01,0.1).map(t=>m.color(t)).join(",");
+  document.getElementById("legBar").style.background =
+    `linear-gradient(90deg, ${stops})`;
+  document.getElementById("legTitle").textContent = m.label + " (0–100)";
+}
+
+function showTip(event,d){
+  const rec = DATA[d.properties.name];
+  const [x,y] = d3.pointer(event, document.getElementById("wrap"));
+  let html = `<h3>${d.properties.name}</h3>`;
+  if(!rec){ html += `<div class="row">No data available</div>`; }
+  else {
+    const comp = Math.round((rec.scam+rec.embezzlement+(100-rec.enforcement))/3);
+    html += `
+      <div class="row">Scam / Fraud <b>${rec.scam}</b></div>
+      <div class="row">Embezzlement <b>${rec.embezzlement}</b></div>
+      <div class="row">Law enforcement <b>${rec.enforcement}</b></div>
+      <div class="row">Composite risk <b>${comp}</b></div>`;
+  }
+  tooltip.html(html).style("opacity",1)
+    .style("left", Math.min(x+14, size()[0]-230)+"px")
+    .style("top",  (y+14)+"px");
+}
+
+d3.selectAll("#controls button").on("click", function(){
+  d3.selectAll("#controls button").classed("active",false);
+  d3.select(this).classed("active",true);
+  metric = this.dataset.metric;
+  color();
+});
+
+window.addEventListener("resize", () => { svg.selectAll("*").remove(); draw(WORLD); });
+
+let WORLD;
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+  .then(world => { WORLD = world; draw(world); })
+  .catch(() => svg.append("text").attr("x",20).attr("y",40)
+    .attr("fill","#f88").text("Could not load base map — check network access."));
+</script>
+</body>
+</html>
