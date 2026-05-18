@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIM EViews Lab — Interactive Econometrics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{--bg:#0d1117;--pan:#161b22;--bd:#30363d;--fg:#c9d1d9;--ac:#58a6ff;--gd:#3fb950;--rd:#f85149}
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--fg)}
+  header{padding:16px 24px;border-bottom:1px solid var(--bd);background:var(--pan)}
+  h1{margin:0;font-size:18px}h1 span{color:var(--ac)}
+  .sub{color:#8b949e;font-size:12px;margin-top:4px}
+  main{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 70px)}
+  .side{border-right:1px solid var(--bd);padding:16px;overflow:auto;background:var(--pan)}
+  .work{padding:16px 24px;overflow:auto}
+  textarea{width:100%;height:150px;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:8px;font:12px monospace;resize:vertical}
+  button{background:var(--ac);color:#08111f;border:0;border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer;margin:4px 4px 4px 0}
+  button.sec{background:transparent;color:var(--ac);border:1px solid var(--bd)}
+  button:hover{opacity:.9}
+  label{display:block;margin:10px 0 4px;font-size:12px;color:#8b949e}
+  select{width:100%;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:6px}
+  .card{background:var(--pan);border:1px solid var(--bd);border-radius:8px;padding:16px;margin-bottom:16px}
+  .card h2{margin:0 0 12px;font-size:14px;color:var(--ac);text-transform:uppercase;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse;font:12px monospace}
+  th,td{text-align:right;padding:6px 10px;border-bottom:1px solid var(--bd)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:#8b949e}
+  .eq{font:13px monospace;background:var(--bg);padding:10px;border-radius:6px;border:1px solid var(--bd)}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;border:1px solid var(--bd);margin-left:6px}
+  .ok{color:var(--gd);border-color:var(--gd)}.no{color:var(--rd);border-color:var(--rd)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  canvas{max-height:300px}
+</style>
+</head>
+<body>
+<header>
+  <h1>FIM <span>EViews Lab</span> — Interactive Econometrics</h1>
+  <div class="sub">Time-series workfile for financial-crime intelligence: estimation, diagnostics & forecasting</div>
+</header>
+<main>
+  <div class="side">
+    <label>Workfile (CSV: period,series1,series2…)</label>
+    <textarea id="data"></textarea>
+    <button id="load">Load Workfile</button>
+    <button class="sec" id="sample">Sample Data</button>
+
+    <label>Dependent variable (Y)</label>
+    <select id="dep"></select>
+    <label>Regressors (X) — Ctrl/Cmd-click</label>
+    <select id="reg" multiple size="5"></select>
+
+    <label>Procedure</label>
+    <select id="proc">
+      <option value="stats">Descriptive Statistics</option>
+      <option value="corr">Correlation Matrix</option>
+      <option value="ols">Least Squares (OLS)</option>
+      <option value="adf">Stationarity Check (ADF-style)</option>
+      <option value="fc">Forecast (OLS / AR-trend)</option>
+    </select>
+    <button id="run">Run</button>
+  </div>
+
+  <div class="work">
+    <div class="card"><h2>Series Plot</h2><canvas id="chart"></canvas></div>
+    <div id="out"></div>
+  </div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let DATA={periods:[],vars:{}}, chart;
+
+const SAMPLE=`period,loss_usd_m,reports,crypto_share
+2023Q1,42.1,1180,0.31
+2023Q2,48.7,1320,0.34
+2023Q3,55.3,1410,0.38
+2023Q4,61.9,1580,0.41
+2024Q1,58.2,1520,0.43
+2024Q2,67.4,1690,0.47
+2024Q3,74.8,1810,0.51
+2024Q4,82.5,1980,0.55
+2025Q1,79.1,1920,0.57
+2025Q2,88.6,2110,0.61
+2025Q3,95.2,2240,0.64
+2025Q4,103.7,2390,0.68`;
+
+function parse(txt){
+  const rows=txt.trim().split(/\r?\n/).map(r=>r.split(','));
+  const head=rows.shift().map(s=>s.trim());
+  const periods=[],vars={};
+  head.slice(1).forEach(h=>vars[h]=[]);
+  rows.forEach(r=>{periods.push(r[0].trim());head.slice(1).forEach((h,i)=>vars[h].push(+r[i+1]))});
+  return {periods,vars};
+}
+function refresh(){
+  const names=Object.keys(DATA.vars);
+  $('dep').innerHTML=names.map(n=>`<option>${n}</option>`).join('');
+  $('reg').innerHTML=names.map(n=>`<option>${n}</option>`).join('');
+  plot();
+}
+function plot(){
+  const ds=Object.keys(DATA.vars).map((n,i)=>({label:n,data:DATA.vars[n],
+    borderColor:['#58a6ff','#3fb950','#f0883e','#bc8cff'][i%4],tension:.3,pointRadius:2}));
+  if(chart)chart.destroy();
+  chart=new Chart($('chart'),{type:'line',data:{labels:DATA.periods,datasets:ds},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#c9d1d9'}}},
+    scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}});
+}
+
+// ---- stats helpers ----
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const vary=a=>{const m=mean(a);return a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1)};
+function moments(a){
+  const m=mean(a),sd=Math.sqrt(vary(a)),n=a.length;
+  const sk=a.reduce((s,x)=>s+((x-m)/sd)**3,0)/n;
+  const ku=a.reduce((s,x)=>s+((x-m)/sd)**4,0)/n;
+  return {n,mean:m,sd,min:Math.min(...a),max:Math.max(...a),skew:sk,kurt:ku,
+    jb:n/6*(sk*sk+(ku-3)**2/4)};
+}
+// OLS with intercept; X = array of regressor arrays
+function ols(y,Xcols){
+  const n=y.length, X=y.map((_,i)=>[1,...Xcols.map(c=>c[i])]), k=X[0].length;
+  const XtX=Array.from({length:k},()=>Array(k).fill(0)), Xty=Array(k).fill(0);
+  for(let i=0;i<n;i++){for(let a=0;a<k;a++){Xty[a]+=X[i][a]*y[i];
+    for(let b=0;b<k;b++)XtX[a][b]+=X[i][a]*X[i][b];}}
+  const inv=invert(XtX), beta=inv.map(r=>r.reduce((s,v,j)=>s+v*Xty[j],0));
+  const yh=X.map(r=>r.reduce((s,v,j)=>s+v*beta[j],0));
+  const res=y.map((v,i)=>v-yh[i]);
+  const sse=res.reduce((s,e)=>s+e*e,0), ym=mean(y);
+  const sst=y.reduce((s,v)=>s+(v-ym)**2,0);
+  const sig2=sse/(n-k), se=beta.map((_,j)=>Math.sqrt(sig2*inv[j][j]));
+  const r2=1-sse/sst, ar2=1-(1-r2)*(n-1)/(n-k);
+  // Durbin-Watson
+  let dw=0;for(let i=1;i<n;i++)dw+=(res[i]-res[i-1])**2;dw/=sse;
+  return {beta,se,t:beta.map((b,j)=>b/se[j]),r2,ar2,n,k,dw,
+    f:(r2/(k-1))/((1-r2)/(n-k)),sig:Math.sqrt(sig2),yh};
+}
+function invert(M){
+  const n=M.length, A=M.map((r,i)=>[...r,...Array(n).fill(0).map((_,j)=>i===j?1:0)]);
+  for(let i=0;i<n;i++){let p=A[i][i];
+    for(let j=0;j<2*n;j++)A[i][j]/=p;
+    for(let r=0;r<n;r++)if(r!==i){let f=A[r][i];
+      for(let j=0;j<2*n;j++)A[r][j]-=f*A[i][j];}}
+  return A.map(r=>r.slice(n));
+}
+const f3=x=>Number.isFinite(x)?x.toFixed(4):'—';
+
+// ---- procedures ----
+function pStats(){
+  const names=Object.keys(DATA.vars);
+  let h='<tr><th>Series</th><th>Obs</th><th>Mean</th><th>Std.Dev</th><th>Min</th><th>Max</th><th>Skew</th><th>Kurt</th><th>Jarque-Bera</th></tr>';
+  names.forEach(n=>{const m=moments(DATA.vars[n]);
+    h+=`<tr><td>${n}</td><td>${m.n}</td><td>${f3(m.mean)}</td><td>${f3(m.sd)}</td><td>${f3(m.min)}</td><td>${f3(m.max)}</td><td>${f3(m.skew)}</td><td>${f3(m.kurt)}</td><td>${f3(m.jb)}</td></tr>`});
+  card('Descriptive Statistics',`<table>${h}</table>`);
+}
+function pCorr(){
+  const names=Object.keys(DATA.vars);
+  const c=(a,b)=>{const ma=mean(a),mb=mean(b);
+    let cov=0,va=0,vb=0;a.forEach((x,i)=>{cov+=(x-ma)*(b[i]-mb);va+=(x-ma)**2;vb+=(b[i]-mb)**2});
+    return cov/Math.sqrt(va*vb)};
+  let h='<tr><th></th>'+names.map(n=>`<th>${n}</th>`).join('')+'</tr>';
+  names.forEach(r=>{h+=`<tr><td>${r}</td>`+names.map(cn=>`<td>${f3(c(DATA.vars[r],DATA.vars[cn]))}</td>`).join('')+'</tr>'});
+  card('Correlation Matrix',`<table>${h}</table>`);
+}
+function pOLS(){
+  const dep=$('dep').value, regs=[...$('reg').selectedOptions].map(o=>o.value).filter(r=>r!==dep);
+  if(!regs.length)return card('Least Squares','<p>Select at least one regressor (X).</p>');
+  const m=ols(DATA.vars[dep],regs.map(r=>DATA.vars[r])), labs=['C',...regs];
+  let t='<tr><th>Variable</th><th>Coefficient</th><th>Std.Error</th><th>t-Stat</th><th>|t|>2</th></tr>';
+  m.beta.forEach((b,i)=>t+=`<tr><td>${labs[i]}</td><td>${f3(b)}</td><td>${f3(m.se[i])}</td><td>${f3(m.t[i])}</td><td><span class="pill ${Math.abs(m.t[i])>2?'ok':'no'}">${Math.abs(m.t[i])>2?'sig':'ns'}</span></td></tr>`);
+  const eq=`${dep} = ${m.beta.map((b,i)=>(i?`${b>=0?'+':'−'} ${Math.abs(b).toFixed(3)}·${labs[i]}`:b.toFixed(3))).join(' ')}`;
+  card('Least Squares — Dependent: '+dep,
+    `<div class="eq">${eq}</div><table style="margin-top:12px">${t}</table>
+     <table style="margin-top:12px">
+     <tr><td>R-squared</td><td>${f3(m.r2)}</td><td>Adj. R-squared</td><td>${f3(m.ar2)}</td></tr>
+     <tr><td>F-statistic</td><td>${f3(m.f)}</td><td>Durbin-Watson</td><td>${f3(m.dw)}</td></tr>
+     <tr><td>S.E. of reg.</td><td>${f3(m.sig)}</td><td>Observations</td><td>${m.n}</td></tr></table>`);
+}
+function pADF(){
+  // regress Δy on y(-1): if coeff on y(-1) significantly negative → stationary
+  const names=Object.keys(DATA.vars);
+  let h='<tr><th>Series</th><th>γ (y₋₁)</th><th>t-Stat</th><th>~5% crit ≈ -3.0</th><th>Verdict</th></tr>';
+  names.forEach(n=>{const y=DATA.vars[n], dy=[],ylag=[];
+    for(let i=1;i<y.length;i++){dy.push(y[i]-y[i-1]);ylag.push(y[i-1])}
+    const m=ols(dy,[ylag]);
+    const st=m.t[1]<-3.0;
+    h+=`<tr><td>${n}</td><td>${f3(m.beta[1])}</td><td>${f3(m.t[1])}</td><td>${m.t[1]<-3?'pass':'fail'}</td><td><span class="pill ${st?'ok':'no'}">${st?'stationary':'unit root'}</span></td></tr>`});
+  card('Stationarity Check (ADF-style, Δy on y₋₁)',
+    `<table>${h}</table><p style="color:#8b949e;font-size:12px">Heuristic test; non-stationary series typically need first-differencing before modelling.</p>`);
+}
+function pForecast(){
+  const dep=$('dep').value, regs=[...$('reg').selectedOptions].map(o=>o.value).filter(r=>r!==dep);
+  const y=DATA.vars[dep], n=y.length, H=4;
+  let yh,fc,mode,future=[];
+  if(regs.length){ // OLS fitted + hold-last regressors
+    const m=ols(y,regs.map(r=>DATA.vars[r])); yh=m.yh; mode='OLS (regressors held at last value)';
+    const last=regs.map(r=>DATA.vars[r].at(-1));
+    for(let h=0;h<H;h++)future.push(m.beta[0]+m.beta.slice(1).reduce((s,b,i)=>s+b*last[i],0));
+  }else{ // AR(1)+trend on time index
+    const t=y.map((_,i)=>i), m=ols(y,[t]); yh=m.yh; mode='Trend model (y on time)';
+    for(let h=0;h<H;h++)future.push(m.beta[0]+m.beta[1]*(n+h));
+  }
+  const labs=[...DATA.periods,...Array.from({length:H},(_,i)=>'F+'+(i+1))];
+  if(chart)chart.destroy();
+  chart=new Chart($('chart'),{type:'line',data:{labels:labs,datasets:[
+    {label:dep+' (actual)',data:y,borderColor:'#58a6ff',tension:.3,pointRadius:2},
+    {label:'fitted',data:yh,borderColor:'#3fb950',borderDash:[4,4],tension:.3,pointRadius:0},
+    {label:'forecast',data:[...Array(n).fill(null),...future],borderColor:'#f0883e',tension:.3,pointRadius:3}
+  ]},options:{responsive:true,plugins:{legend:{labels:{color:'#c9d1d9'}}},
+    scales:{x:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e'},grid:{color:'#21262d'}}}}});
+  let t='<tr><th>Horizon</th><th>Forecast '+dep+'</th></tr>';
+  future.forEach((v,i)=>t+=`<tr><td>F+${i+1}</td><td>${f3(v)}</td></tr>`);
+  card('Forecast — '+mode,`<table>${t}</table>`);
+}
+function card(title,html){$('out').innerHTML=`<div class="card"><h2>${title}</h2>${html}</div>`}
+
+$('sample').onclick=()=>{$('data').value=SAMPLE};
+$('load').onclick=()=>{try{DATA=parse($('data').value);refresh()}catch(e){alert('Parse error: '+e.message)}};
+$('run').onclick=()=>({stats:pStats,corr:pCorr,ols:pOLS,adf:pADF,fc:pForecast}[$('proc').value]());
+// boot
+$('data').value=SAMPLE;DATA=parse(SAMPLE);refresh();
+</script>
+</body>
+</html>
