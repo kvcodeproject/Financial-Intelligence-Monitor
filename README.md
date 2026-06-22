@@ -13,6 +13,15 @@ Search & Forensics — Full-text search across historical reports with filters f
 API Access — REST and WebSocket endpoints for integration with SIEMs, fraud platforms, and case-management tools.
 Visualization Dashboard — Heat maps, trend charts, and entity-relationship graphs for analysts.
 
+## Dashboard
+A self-contained single-file dashboard is available at `dashboard.html`. It
+renders a dark-themed world map (Leaflet + CARTO dark tiles), KPI cards, a
+live feed, severity/category filters, and a recent-cases table. Open the
+file directly in a browser — no build step required.
+
+Replace the `SEED` array in the inline `<script>` with your own data source
+(REST/WebSocket) to wire it to a real backend.
+
 
 Case Status Labels
 Every case tracked in FIM is tagged with one of the following status labels:

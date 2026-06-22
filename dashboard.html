@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Financial Intelligence Monitor — Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="" />
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #121933;
+    --panel-2: #1a2347;
+    --text: #e7ecf5;
+    --muted: #8a93b2;
+    --accent: #5eead4;
+    --warn: #fbbf24;
+    --crit: #f87171;
+    --ok: #34d399;
+    --border: #233063;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+  header {
+    padding: 18px 24px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #0e1530, #0b1020);
+  }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .3px; }
+  header .badge { font-size: 11px; padding: 3px 8px; background: var(--accent); color: #062a25;
+    border-radius: 999px; margin-left: 10px; font-weight: 700; }
+  header .live { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  header .live .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+    box-shadow: 0 0 0 0 rgba(52,211,153,.6); animation: pulse 1.6s infinite; }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(52,211,153,.6); }
+    70% { box-shadow: 0 0 0 12px rgba(52,211,153,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+  }
+  .layout {
+    display: grid; gap: 16px; padding: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas:
+      "stat stat stat stat"
+      "map  map  map  side"
+      "tbl  tbl  tbl  side";
+  }
+  .stats { grid-area: stat; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .card .val { font-size: 26px; font-weight: 700; }
+  .card .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .val.crit { color: var(--crit); }
+  .val.warn { color: var(--warn); }
+  .val.ok   { color: var(--ok); }
+  .val.acc  { color: var(--accent); }
+
+  #map { grid-area: map; height: 520px; border-radius: 14px; border: 1px solid var(--border); }
+
+  .side { grid-area: side; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .side .card { display: flex; flex-direction: column; min-height: 0; }
+  .panel-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .panel-title h2 { font-size: 13px; margin: 0; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px;
+    background: var(--panel-2); color: var(--text); cursor: pointer; user-select: none;
+  }
+  .chip.active { background: var(--accent); color: #062a25; border-color: var(--accent); font-weight: 700; }
+
+  ul.feed { list-style: none; margin: 0; padding: 0; overflow: auto; max-height: 320px; }
+  ul.feed li {
+    padding: 10px 0; border-bottom: 1px dashed var(--border); display: grid; gap: 4px;
+  }
+  ul.feed .row1 { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  ul.feed .row1 .cat { font-weight: 700; }
+  ul.feed .row2 { font-size: 12px; color: var(--muted); }
+  .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2);
+    border: 1px solid var(--border); color: var(--muted); }
+  .pill.crit { color: #fee2e2; background: #4b1d1d; border-color: #7f1d1d; }
+  .pill.warn { color: #fef3c7; background: #4b3a14; border-color: #b45309; }
+  .pill.ok   { color: #d1fae5; background: #134e4a; border-color: #047857; }
+
+  .tbl-wrap { grid-area: tbl; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; }
+  tbody tr:hover { background: rgba(94,234,212,.05); cursor: pointer; }
+
+  .leaflet-popup-content-wrapper { background: #121933; color: var(--text); border: 1px solid var(--border); }
+  .leaflet-popup-content { margin: 10px 12px; font-size: 13px; }
+  .leaflet-popup-tip { background: #121933; }
+  .leaflet-container { background: #0d1330; }
+
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr 1fr; grid-template-areas: "stat stat" "map map" "side side" "tbl tbl"; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Financial Intelligence Monitor <span class="badge">FIM</span></h1>
+  </div>
+  <div class="live"><span class="dot"></span> Live feed · <span id="clock"></span></div>
+</header>
+
+<main class="layout">
+
+  <section class="stats">
+    <div class="card"><h3>Active Cases</h3><div class="val acc"  id="kpiTotal">0</div><div class="sub">Last 30 days</div></div>
+    <div class="card"><h3>Fraud</h3>       <div class="val warn" id="kpiFraud">0</div><div class="sub">Investment, BEC, wire</div></div>
+    <div class="card"><h3>Scams</h3>       <div class="val warn" id="kpiScam">0</div><div class="sub">Phishing, romance, mule</div></div>
+    <div class="card"><h3>Unsolved</h3>    <div class="val crit" id="kpiUnsolved">0</div><div class="sub">Awaiting follow-up</div></div>
+    <div class="card"><h3>Est. Loss (USD)</h3><div class="val crit" id="kpiLoss">$0</div><div class="sub">Reported losses</div></div>
+  </section>
+
+  <div id="map"></div>
+
+  <aside class="side">
+    <div class="card">
+      <div class="panel-title"><h2>Filters</h2></div>
+      <div class="filter-row" id="catFilter">
+        <span class="chip active" data-cat="all">All</span>
+        <span class="chip" data-cat="fraud">Fraud</span>
+        <span class="chip" data-cat="scam">Scam</span>
+        <span class="chip" data-cat="laundering">Laundering</span>
+        <span class="chip" data-cat="crypto">Crypto</span>
+        <span class="chip" data-cat="ransomware">Ransomware</span>
+      </div>
+      <div style="height: 10px"></div>
+      <div class="filter-row" id="sevFilter">
+        <span class="chip active" data-sev="all">Any severity</span>
+        <span class="chip" data-sev="critical">Critical</span>
+        <span class="chip" data-sev="high">High</span>
+        <span class="chip" data-sev="medium">Medium</span>
+      </div>
+    </div>
+
+    <div class="card" style="flex: 1; min-height: 0;">
+      <div class="panel-title">
+        <h2>Live Feed</h2>
+        <span class="pill" id="feedCount">0</span>
+      </div>
+      <ul class="feed" id="feed"></ul>
+    </div>
+  </aside>
+
+  <section class="tbl-wrap card">
+    <div class="panel-title">
+      <h2>Recent Cases</h2>
+      <span class="pill" id="tblCount">0</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Category</th><th>Title</th><th>Location</th>
+          <th>Loss (USD)</th><th>Status</th><th>Severity</th><th>Reported</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+<script>
+/* ---------- Sample data (replace with API feed) ---------- */
+const SEED = [
+  { id: "FIM-2041", cat: "fraud",     title: "Investment Ponzi targeting expats",   loc: "London, UK",        lat: 51.5074, lng:  -0.1278, loss: 4_800_000, status: "unsolved", sev: "critical" },
+  { id: "FIM-2042", cat: "scam",      title: "Romance scam ring on dating apps",    loc: "Lagos, NG",         lat:  6.5244, lng:   3.3792, loss:   320_000, status: "investigating", sev: "high" },
+  { id: "FIM-2043", cat: "crypto",    title: "Rug pull on DEX liquidity pool",      loc: "Singapore, SG",     lat:  1.3521, lng: 103.8198, loss: 2_150_000, status: "unsolved", sev: "high" },
+  { id: "FIM-2044", cat: "ransomware",title: "Hospital network ransom demand",      loc: "Hamburg, DE",       lat: 53.5511, lng:  10.0000, loss: 6_000_000, status: "investigating", sev: "critical" },
+  { id: "FIM-2045", cat: "laundering",title: "Trade-based laundering via shell co.",loc: "Dubai, AE",         lat: 25.2048, lng:  55.2708, loss: 9_200_000, status: "unsolved", sev: "critical" },
+  { id: "FIM-2046", cat: "scam",      title: "Phishing wave - bank impersonation",  loc: "São Paulo, BR",     lat:-23.5505, lng: -46.6333, loss:    78_000, status: "resolved", sev: "medium" },
+  { id: "FIM-2047", cat: "fraud",     title: "Business email compromise",            loc: "New York, US",      lat: 40.7128, lng: -74.0060, loss: 1_500_000, status: "investigating", sev: "high" },
+  { id: "FIM-2048", cat: "crypto",    title: "Pig-butchering investment scam",       loc: "Bangkok, TH",       lat: 13.7563, lng: 100.5018, loss:   640_000, status: "unsolved", sev: "high" },
+  { id: "FIM-2049", cat: "fraud",     title: "SIM-swap brokerage takeover",          loc: "Toronto, CA",       lat: 43.6532, lng: -79.3832, loss:   210_000, status: "investigating", sev: "medium" },
+  { id: "FIM-2050", cat: "scam",      title: "Crypto giveaway impersonation",        loc: "Sydney, AU",        lat:-33.8688, lng: 151.2093, loss:    45_000, status: "resolved", sev: "medium" },
+  { id: "FIM-2051", cat: "laundering",title: "Money-mule recruitment ring",          loc: "Bucharest, RO",     lat: 44.4268, lng:  26.1025, loss:   880_000, status: "unsolved", sev: "high" },
+  { id: "FIM-2052", cat: "ransomware",title: "Logistics co. encrypted backups",      loc: "Tokyo, JP",         lat: 35.6762, lng: 139.6503, loss: 3_300_000, status: "investigating", sev: "critical" },
+  { id: "FIM-2053", cat: "fraud",     title: "Fake invoice scheme",                   loc: "Cape Town, ZA",     lat:-33.9249, lng:  18.4241, loss:   125_000, status: "unsolved", sev: "medium" },
+  { id: "FIM-2054", cat: "scam",      title: "Tax-refund phishing campaign",          loc: "Mumbai, IN",        lat: 19.0760, lng:  72.8777, loss:   180_000, status: "investigating", sev: "medium" },
+  { id: "FIM-2055", cat: "crypto",    title: "NFT wash-trading scheme",               loc: "Berlin, DE",        lat: 52.5200, lng:  13.4050, loss:   410_000, status: "unsolved", sev: "high" }
+];
+
+/* ---------- State ---------- */
+const state = { cases: [...SEED], cat: "all", sev: "all" };
+
+/* ---------- Map ---------- */
+const map = L.map("map", { worldCopyJump: true, minZoom: 2 }).setView([20, 10], 2);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  attribution: '&copy; OpenStreetMap &copy; CARTO',
+  subdomains: "abcd", maxZoom: 19
+}).addTo(map);
+
+const markerLayer = L.layerGroup().addTo(map);
+const sevColor = { critical: "#f87171", high: "#fbbf24", medium: "#5eead4" };
+
+function renderMarkers(rows) {
+  markerLayer.clearLayers();
+  rows.forEach(c => {
+    const r = c.sev === "critical" ? 11 : c.sev === "high" ? 8 : 6;
+    L.circleMarker([c.lat, c.lng], {
+      radius: r, color: sevColor[c.sev] || "#5eead4",
+      fillColor: sevColor[c.sev] || "#5eead4", fillOpacity: 0.55, weight: 2
+    }).bindPopup(
+      `<b>${c.id}</b> · ${c.cat.toUpperCase()}<br/>${c.title}<br/>
+       <small>${c.loc} · loss $${c.loss.toLocaleString()} · ${c.status}</small>`
+    ).addTo(markerLayer);
+  });
+}
+
+/* ---------- Renderers ---------- */
+const $ = id => document.getElementById(id);
+const fmt = n => "$" + n.toLocaleString();
+
+function applyFilters() {
+  return state.cases.filter(c =>
+    (state.cat === "all" || c.cat === state.cat) &&
+    (state.sev === "all" || c.sev === state.sev)
+  );
+}
+
+function renderKPIs(rows) {
+  $("kpiTotal").textContent    = rows.length;
+  $("kpiFraud").textContent    = rows.filter(c => c.cat === "fraud").length;
+  $("kpiScam").textContent     = rows.filter(c => c.cat === "scam").length;
+  $("kpiUnsolved").textContent = rows.filter(c => c.status === "unsolved").length;
+  $("kpiLoss").textContent     = fmt(rows.reduce((a, c) => a + c.loss, 0));
+}
+
+function pill(sev) {
+  const cls = sev === "critical" ? "crit" : sev === "high" ? "warn" : "ok";
+  return `<span class="pill ${cls}">${sev}</span>`;
+}
+
+function renderFeed(rows) {
+  const html = rows.slice(0, 20).map(c => `
+    <li>
+      <div class="row1"><span class="cat">${c.id}</span> ${pill(c.sev)}</div>
+      <div class="row2">${c.title} — ${c.loc}</div>
+    </li>`).join("");
+  $("feed").innerHTML = html || `<li class="row2" style="color:var(--muted)">No matches.</li>`;
+  $("feedCount").textContent = rows.length;
+}
+
+function renderTable(rows) {
+  $("tbody").innerHTML = rows.map(c => `
+    <tr>
+      <td>${c.id}</td><td>${c.cat}</td><td>${c.title}</td>
+      <td>${c.loc}</td><td>${fmt(c.loss)}</td>
+      <td>${c.status}</td><td>${pill(c.sev)}</td>
+      <td>${c._reported || "just now"}</td>
+    </tr>`).join("");
+  $("tblCount").textContent = rows.length;
+}
+
+function renderAll() {
+  const rows = applyFilters();
+  renderKPIs(rows); renderFeed(rows); renderTable(rows); renderMarkers(rows);
+}
+
+/* ---------- Filter wiring ---------- */
+document.querySelectorAll("#catFilter .chip").forEach(el =>
+  el.addEventListener("click", () => {
+    document.querySelectorAll("#catFilter .chip").forEach(x => x.classList.remove("active"));
+    el.classList.add("active"); state.cat = el.dataset.cat; renderAll();
+  })
+);
+document.querySelectorAll("#sevFilter .chip").forEach(el =>
+  el.addEventListener("click", () => {
+    document.querySelectorAll("#sevFilter .chip").forEach(x => x.classList.remove("active"));
+    el.classList.add("active"); state.sev = el.dataset.sev; renderAll();
+  })
+);
+
+/* ---------- Simulated live feed ---------- */
+const CITIES = [
+  ["Paris, FR", 48.8566, 2.3522], ["Madrid, ES", 40.4168, -3.7038],
+  ["Seoul, KR", 37.5665, 126.9780], ["Mexico City, MX", 19.4326, -99.1332],
+  ["Nairobi, KE", -1.2921, 36.8219], ["Jakarta, ID", -6.2088, 106.8456],
+  ["Istanbul, TR", 41.0082, 28.9784], ["Buenos Aires, AR", -34.6037, -58.3816]
+];
+const CATS = ["fraud","scam","crypto","laundering","ransomware"];
+const SEV  = ["critical","high","medium"];
+const TITLES = [
+  "Wire-transfer fraud attempt", "Phishing kit distribution", "Crypto exchange exit scam",
+  "Invoice redirect compromise", "Mule account network surge", "Romance-scam cluster",
+  "Ransomware double-extortion", "Pig-butchering platform takedown"
+];
+let counter = 2056;
+function rand(a){ return a[Math.floor(Math.random()*a.length)]; }
+function tick() {
+  const city = rand(CITIES);
+  state.cases.unshift({
+    id: "FIM-" + (counter++),
+    cat: rand(CATS),
+    title: rand(TITLES),
+    loc: city[0], lat: city[1], lng: city[2],
+    loss: Math.floor(Math.random()*2_500_000) + 10_000,
+    status: rand(["unsolved","investigating","resolved"]),
+    sev: rand(SEV),
+    _reported: new Date().toLocaleTimeString()
+  });
+  state.cases = state.cases.slice(0, 80);
+  renderAll();
+}
+setInterval(tick, 6000);
+
+/* ---------- Clock ---------- */
+function clock() { $("clock").textContent = new Date().toUTCString().slice(17,25) + " UTC"; }
+setInterval(clock, 1000); clock();
+
+renderAll();
+</script>
+</body>
+</html>
